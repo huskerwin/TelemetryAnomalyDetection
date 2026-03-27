@@ -14,25 +14,28 @@ from tkinter import ttk, filedialog, messagebox
 from pathlib import Path
 
 
-# Modern color scheme
+# True dark color scheme
 COLORS = {
-    'bg_dark': '#1a1a2e',
-    'bg_medium': '#16213e',
-    'bg_light': '#0f3460',
-    'accent': '#e94560',
-    'accent_hover': '#ff6b6b',
-    'text': '#ffffff',
-    'text_secondary': '#a0a0a0',
-    'success': '#4ecca3',
-    'warning': '#ffc107',
-    'point_anomaly': '#ff6b6b',
-    'contextual_anomaly': '#4ecdc4',
-    'mixed_anomaly': '#ffd93d',
-    'chart_blue': '#2e86ab',
-    'chart_pink': '#a23b72',
-    'chart_orange': '#f18f01',
-    'chart_red': '#c73e1d',
-    'chart_dark': '#3b1f2b',
+    'bg_dark': '#0a0a0a',
+    'bg_medium': '#111111',
+    'bg_light': '#1a1a1a',
+    'bg_lighter': '#242424',
+    'border': '#2a2a2a',
+    'accent': '#00d4ff',
+    'accent_hover': '#33ddff',
+    'text': '#e8e8e8',
+    'text_secondary': '#666666',
+    'success': '#00ff88',
+    'warning': '#ffaa00',
+    'point_anomaly': '#ff4444',
+    'contextual_anomaly': '#00ff88',
+    'mixed_anomaly': '#ffaa00',
+    'chart_cyan': '#00d4ff',
+    'chart_pink': '#ff6b9d',
+    'chart_orange': '#ff9f43',
+    'chart_red': '#ff4444',
+    'chart_green': '#00ff88',
+    'chart_purple': '#a855f7',
 }
 
 # Matplotlib colors for plots
