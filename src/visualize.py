@@ -115,6 +115,21 @@ class TelemetryVisualizer:
                 train_values = train_data
                 test_values = test_data
             
+            # Get anomaly type for title
+            anomaly_type = ""
+            if labels_df is not None:
+                id_col = 'chan_id' if 'chan_id' in labels_df.columns else 'channel_id'
+                if id_col in labels_df.columns:
+                    channel_labels = labels_df[labels_df[id_col] == channel_id]
+                    if not channel_labels.empty and 'class' in channel_labels.columns:
+                        class_val = str(channel_labels.iloc[0]['class']).lower()
+                        if 'point' in class_val and 'contextual' not in class_val:
+                            anomaly_type = " (Point Anomaly)"
+                        elif 'contextual' in class_val and 'point' not in class_val:
+                            anomaly_type = " (Contextual Anomaly)"
+                        elif 'point' in class_val and 'contextual' in class_val:
+                            anomaly_type = " (Mixed Anomaly)"
+            
             # Plot training data
             axes[0].plot(train_values, color=self.colors[0], alpha=0.8, linewidth=0.8)
             axes[0].set_title(f'Training Data - {channel_id}', fontsize=12, fontweight='bold')
@@ -126,19 +141,33 @@ class TelemetryVisualizer:
             
             # Add anomaly labels if available
             if labels_df is not None:
-                channel_labels = labels_df[labels_df['channel_id'] == channel_id]
-                if not channel_labels.empty:
-                    for _, row in channel_labels.iterrows():
-                        try:
-                            anomaly_seq = eval(row['anomaly_sequences']) if isinstance(row['anomaly_sequences'], str) else row['anomaly_sequences']
-                            for start, end in anomaly_seq:
-                                axes[1].axvspan(start, end, alpha=0.3, color='red', label='Anomaly')
-                        except:
-                            pass
+                # Handle different column names (channel_id or chan_id)
+                id_col = 'chan_id' if 'chan_id' in labels_df.columns else 'channel_id'
+                if id_col in labels_df.columns:
+                    channel_labels = labels_df[labels_df[id_col] == channel_id]
+                    if not channel_labels.empty:
+                        for _, row in channel_labels.iterrows():
+                            try:
+                                anomaly_seq = eval(row['anomaly_sequences']) if isinstance(row['anomaly_sequences'], str) else row['anomaly_sequences']
+                                # Get anomaly class
+                                class_val = str(row.get('class', '')).lower()
+                                for start, end in anomaly_seq:
+                                    # Different colors for point vs contextual
+                                    if 'point' in class_val and 'contextual' not in class_val:
+                                        axes[1].axvspan(start, end, alpha=0.4, color='#FF6B6B', label='Point Anomaly')
+                                    elif 'contextual' in class_val and 'point' not in class_val:
+                                        axes[1].axvspan(start, end, alpha=0.4, color='#4ECDC4', label='Contextual Anomaly')
+                                    else:
+                                        axes[1].axvspan(start, end, alpha=0.4, color='#FFD93D', label='Mixed Anomaly')
+                            except:
+                                pass
             
-            axes[1].set_title(f'Test Data - {channel_id}', fontsize=12, fontweight='bold')
+            axes[1].set_title(f'Test Data - {channel_id}{anomaly_type}', fontsize=12, fontweight='bold')
             axes[1].set_ylabel('Value')
-            axes[1].legend(loc='upper right')
+            # Remove duplicate labels
+            handles, labels = axes[1].get_legend_handles_labels()
+            by_label = dict(zip(labels, handles))
+            axes[1].legend(by_label.values(), by_label.keys(), loc='upper right')
             axes[1].grid(True, alpha=0.3)
             
             # Plot combined distribution
@@ -158,7 +187,7 @@ class TelemetryVisualizer:
             plt.savefig(save_path, dpi=150, bbox_inches='tight')
             print(f"Saved plot to {save_path}")
         
-        plt.show()
+        plt.close()
     
     def plot_multiple_channels(self, data, channel_ids, max_channels=5, save=True):
         """
