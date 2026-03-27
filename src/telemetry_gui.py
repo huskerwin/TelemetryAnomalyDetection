@@ -305,24 +305,27 @@ class TelemetryViewer:
         
         # Navigation buttons
         nav_frame = tk.Frame(sidebar, bg=COLORS['bg_medium'])
-        nav_frame.pack(fill=tk.X, padx=15, pady=(5, 15))
+        nav_frame.pack(fill=tk.X, padx=15, pady=(5, 5))
         
-        prev_btn = ModernButton(nav_frame, text="< Previous", command=self.prev_channel,
-                               width=130, height=36, bg_color=COLORS['bg_lighter'],
+        prev_btn = ModernButton(nav_frame, text="< Prev", command=self.prev_channel,
+                               width=100, height=36, bg_color=COLORS['bg_lighter'],
                                hover_color=COLORS['accent'])
-        prev_btn.pack(side=tk.LEFT, padx=(0, 10))
+        prev_btn.pack(side=tk.LEFT, padx=(0, 5))
         
         next_btn = ModernButton(nav_frame, text="Next >", command=self.next_channel,
-                               width=130, height=36, bg_color=COLORS['bg_lighter'],
+                               width=100, height=36, bg_color=COLORS['bg_lighter'],
                                hover_color=COLORS['accent'])
         next_btn.pack(side=tk.LEFT)
         
-        # Channel position indicator
-        self.channel_pos_var = tk.StringVar(value="- / -")
-        pos_label = tk.Label(nav_frame, textvariable=self.channel_pos_var,
-                            font=('Segoe UI', 9), fg=COLORS['text_secondary'],
-                            bg=COLORS['bg_medium'])
-        pos_label.pack(side=tk.RIGHT)
+        # Channel position indicator - separate row for visibility
+        pos_frame = tk.Frame(sidebar, bg=COLORS['bg_lighter'])
+        pos_frame.pack(fill=tk.X, padx=15, pady=(0, 15))
+        
+        self.channel_pos_var = tk.StringVar(value="Channel - of -")
+        pos_label = tk.Label(pos_frame, textvariable=self.channel_pos_var,
+                            font=('Segoe UI', 10), fg=COLORS['text'],
+                            bg=COLORS['bg_lighter'], pady=8)
+        pos_label.pack()
         
         # View selection section
         self._create_section(sidebar, "View Type")
