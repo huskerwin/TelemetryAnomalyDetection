@@ -303,6 +303,27 @@ class TelemetryViewer:
         self.channel_combo.pack(fill=tk.X, ipady=5)
         self.channel_combo.bind("<<ComboboxSelected>>", self.on_channel_select)
         
+        # Navigation buttons
+        nav_frame = tk.Frame(sidebar, bg=COLORS['bg_medium'])
+        nav_frame.pack(fill=tk.X, padx=15, pady=(5, 15))
+        
+        prev_btn = ModernButton(nav_frame, text="< Previous", command=self.prev_channel,
+                               width=130, height=36, bg_color=COLORS['bg_lighter'],
+                               hover_color=COLORS['accent'])
+        prev_btn.pack(side=tk.LEFT, padx=(0, 10))
+        
+        next_btn = ModernButton(nav_frame, text="Next >", command=self.next_channel,
+                               width=130, height=36, bg_color=COLORS['bg_lighter'],
+                               hover_color=COLORS['accent'])
+        next_btn.pack(side=tk.LEFT)
+        
+        # Channel position indicator
+        self.channel_pos_var = tk.StringVar(value="- / -")
+        pos_label = tk.Label(nav_frame, textvariable=self.channel_pos_var,
+                            font=('Segoe UI', 9), fg=COLORS['text_secondary'],
+                            bg=COLORS['bg_medium'])
+        pos_label.pack(side=tk.RIGHT)
+        
         # View selection section
         self._create_section(sidebar, "View Type")
         
@@ -613,6 +634,52 @@ class TelemetryViewer:
         except:
             return 0
     
+    def update_channel_position(self):
+        """Update the channel position indicator."""
+        channels = list(self.channel_combo['values'])
+        if not channels:
+            self.channel_pos_var.set("- / -")
+            return
+        
+        current = self.channel_var.get()
+        if current in channels:
+            idx = channels.index(current) + 1
+            self.channel_pos_var.set(f"{idx} / {len(channels)}")
+        else:
+            self.channel_pos_var.set(f"- / {len(channels)}")
+    
+    def prev_channel(self):
+        """Navigate to previous channel."""
+        channels = list(self.channel_combo['values'])
+        if not channels:
+            return
+        
+        current = self.channel_var.get()
+        if current in channels:
+            idx = channels.index(current)
+            if idx > 0:
+                self.channel_combo.current(idx - 1)
+                self.on_channel_select()
+        elif channels:
+            self.channel_combo.current(0)
+            self.on_channel_select()
+    
+    def next_channel(self):
+        """Navigate to next channel."""
+        channels = list(self.channel_combo['values'])
+        if not channels:
+            return
+        
+        current = self.channel_var.get()
+        if current in channels:
+            idx = channels.index(current)
+            if idx < len(channels) - 1:
+                self.channel_combo.current(idx + 1)
+                self.on_channel_select()
+        elif channels:
+            self.channel_combo.current(0)
+            self.on_channel_select()
+    
     def on_channel_select(self, event=None):
         """Handle channel selection."""
         channel_id = self.channel_var.get()
@@ -639,6 +706,7 @@ class TelemetryViewer:
                 self.plot_rolling_stats(channel_id, feature_idx)
             
             self.canvas.draw()
+            self.update_channel_position()
             self.status_var.set(f"Viewing: {channel_id} - {view_type}")
         
         except Exception as e:
