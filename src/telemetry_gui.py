@@ -40,11 +40,11 @@ COLORS = {
 
 # Matplotlib colors for plots
 CHART_COLORS = [
-    COLORS['chart_blue'],
+    COLORS['chart_cyan'],
     COLORS['chart_pink'],
     COLORS['chart_orange'],
     COLORS['chart_red'],
-    COLORS['chart_dark'],
+    COLORS['chart_green'],
 ]
 
 
