@@ -42,12 +42,25 @@ pip install -r requirements.txt
 
 ## Usage
 
-### Visualize Data
+### GUI Viewer (Recommended)
 ```bash
-python src/visualize.py --dataset nasa_smap_msl
+python viewer.py
 ```
 
-### Run Jupyter Notebook
+The GUI allows you to:
+- Browse for any data directory
+- Select telemetry channels from a dropdown
+- Choose different views (Overview, Training, Test, Distribution, Time Series Features, Rolling Stats)
+- Filter channels by anomaly type (Point, Contextual, Mixed)
+- Select specific features for multi-dimensional data
+- Zoom and pan using the toolbar
+
+### Batch Visualization
+```bash
+python src/visualize.py
+```
+
+### Jupyter Notebook
 ```bash
 jupyter notebook notebooks/analysis.ipynb
 ```
