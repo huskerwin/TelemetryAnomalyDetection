@@ -553,6 +553,28 @@ class TelemetryViewer:
             messagebox.showerror("Error", f"Failed to load data:\n{str(e)}")
             self.status_var.set("Error loading data")
     
+    def _anomaly_flags_to_sequences(self, anomaly_flags):
+        """Convert per-point anomaly flags (0/1) to [start, end] sequences."""
+        sequences = []
+        in_anomaly = False
+        start = 0
+        
+        for i, flag in enumerate(anomaly_flags):
+            if flag == 1 and not in_anomaly:
+                # Start of anomaly region
+                start = i
+                in_anomaly = True
+            elif flag == 0 and in_anomaly:
+                # End of anomaly region
+                sequences.append([start, i])
+                in_anomaly = False
+        
+        # Handle case where anomaly extends to end
+        if in_anomaly:
+            sequences.append([start, len(anomaly_flags)])
+        
+        return sequences
+    
     def load_csv_data(self, csv_file):
         """Load CSV telemetry data - handles both simple CSV and OPS-SAT format."""
         df = pd.read_csv(csv_file)
@@ -564,8 +586,11 @@ class TelemetryViewer:
             # OPS-SAT format: group by channel and train/test split
             channels = df['channel'].unique()
             
+            # Store anomaly sequences for each channel
+            anomaly_sequences = {}
+            
             for channel in channels:
-                channel_df = df[df['channel'] == channel]
+                channel_df = df[df['channel'] == channel].reset_index(drop=True)
                 
                 # Get training data (train == 1)
                 train_df = channel_df[channel_df['train'] == 1]
@@ -576,6 +601,12 @@ class TelemetryViewer:
                 test_df = channel_df[channel_df['train'] == 0]
                 if not test_df.empty:
                     self.test_data[channel] = test_df['value'].values
+                    
+                    # Convert per-point anomaly flags to sequences for test data
+                    if 'anomaly' in test_df.columns:
+                        anomaly_flags = test_df['anomaly'].values
+                        sequences = self._anomaly_flags_to_sequences(anomaly_flags)
+                        anomaly_sequences[channel] = sequences
                 elif not train_df.empty:
                     # If no test data, split training data
                     values = train_df['value'].values
@@ -583,10 +614,17 @@ class TelemetryViewer:
                     self.train_data[channel] = values[:split_idx]
                     self.test_data[channel] = values[split_idx:]
             
-            # Store anomaly labels if available
-            if 'label' in df.columns:
-                self.labels_df = df[['channel', 'label', 'anomaly']].drop_duplicates()
-                self.labels_df = self.labels_df.rename(columns={'channel': 'chan_id'})
+            # Create labels_df with anomaly sequences
+            labels_records = []
+            for channel in channels:
+                seqs = anomaly_sequences.get(channel, [])
+                has_anomalies = len(seqs) > 0
+                labels_records.append({
+                    'chan_id': channel,
+                    'anomaly_sequences': str(seqs) if seqs else '[]',
+                    'class': 'point' if has_anomalies else 'normal'
+                })
+            self.labels_df = pd.DataFrame(labels_records)
         
         # Check if this is segments.csv format (has channel, timestamp, value)
         elif 'channel' in df.columns and 'value' in df.columns:
