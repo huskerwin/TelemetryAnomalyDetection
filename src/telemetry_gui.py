@@ -540,22 +540,88 @@ class TelemetryViewer:
             self.status_var.set("Error loading data")
     
     def load_csv_data(self, csv_file):
-        """Load CSV telemetry data."""
+        """Load CSV telemetry data - handles both simple CSV and OPS-SAT format."""
         df = pd.read_csv(csv_file)
         self.train_data = {}
+        self.test_data = {}
         
-        numeric_cols = df.select_dtypes(include=[np.number]).columns
-        for col in numeric_cols:
-            self.train_data[col] = df[col].values
+        # Check if this is OPS-SAT format (has channel, value, train columns)
+        if 'channel' in df.columns and 'value' in df.columns and 'train' in df.columns:
+            # OPS-SAT format: group by channel and train/test split
+            channels = df['channel'].unique()
+            
+            for channel in channels:
+                channel_df = df[df['channel'] == channel]
+                
+                # Get training data (train == 1)
+                train_df = channel_df[channel_df['train'] == 1]
+                if not train_df.empty:
+                    self.train_data[channel] = train_df['value'].values
+                
+                # Get test data (train == 0)
+                test_df = channel_df[channel_df['train'] == 0]
+                if not test_df.empty:
+                    self.test_data[channel] = test_df['value'].values
+                elif not train_df.empty:
+                    # If no test data, split training data
+                    values = train_df['value'].values
+                    split_idx = int(0.8 * len(values))
+                    self.train_data[channel] = values[:split_idx]
+                    self.test_data[channel] = values[split_idx:]
+            
+            # Store anomaly labels if available
+            if 'label' in df.columns:
+                self.labels_df = df[['channel', 'label', 'anomaly']].drop_duplicates()
+                self.labels_df = self.labels_df.rename(columns={'channel': 'chan_id'})
         
+        # Check if this is segments.csv format (has channel, timestamp, value)
+        elif 'channel' in df.columns and 'value' in df.columns:
+            channels = df['channel'].unique()
+            
+            for channel in channels:
+                channel_df = df[df['channel'] == channel]
+                values = channel_df['value'].values
+                
+                # Check if there's a train column
+                if 'train' in df.columns:
+                    train_df = channel_df[channel_df['train'] == 1]
+                    test_df = channel_df[channel_df['train'] == 0]
+                    if not train_df.empty:
+                        self.train_data[channel] = train_df['value'].values
+                    if not test_df.empty:
+                        self.test_data[channel] = test_df['value'].values
+                else:
+                    # Split 80/20
+                    split_idx = int(0.8 * len(values))
+                    self.train_data[channel] = values[:split_idx]
+                    self.test_data[channel] = values[split_idx:]
+            
+            # Store anomaly labels if available
+            if 'label' in df.columns:
+                self.labels_df = df[['channel', 'label']].drop_duplicates()
+                self.labels_df = self.labels_df.rename(columns={'channel': 'chan_id'})
+                if 'anomaly' in df.columns:
+                    self.labels_df['class'] = self.labels_df['label'].apply(
+                        lambda x: 'point' if x == 'anomaly' else 'normal')
+        
+        else:
+            # Simple numeric columns format
+            numeric_cols = df.select_dtypes(include=[np.number]).columns
+            for col in numeric_cols:
+                values = df[col].values
+                split_idx = int(0.8 * len(values))
+                self.train_data[col] = values[:split_idx]
+                self.test_data[col] = values[split_idx:]
+        
+        # Update UI
         self.all_channels = sorted(self.train_data.keys())
         self.channel_combo['values'] = self.all_channels
         if self.all_channels:
             self.channel_combo.current(0)
         
-        self.channel_count_var.set(f"{len(self.all_channels)} columns loaded")
+        self.channel_count_var.set(f"{len(self.all_channels)} channels loaded")
         self.info_var.set(f"Loaded: {csv_file.name}")
-        self.status_var.set(f"Loaded {len(self.all_channels)} columns successfully")
+        self.status_var.set(f"Loaded {len(self.all_channels)} channels successfully")
         self.on_channel_select()
     
     def parse_anomaly_types(self):
