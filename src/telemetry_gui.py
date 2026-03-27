@@ -64,6 +64,7 @@ class ModernButton(tk.Canvas):
         self.font = font
         self.width = width
         self.height = height
+        self.btn_text = text  # Store text as instance variable
         
         self._draw_button(text)
         
@@ -76,6 +77,7 @@ class ModernButton(tk.Canvas):
         if bg is None:
             bg = self.bg_color
         
+        self.btn_text = text  # Update stored text
         self.delete('all')
         
         # Draw rounded rectangle (simulated with arcs)
@@ -101,10 +103,10 @@ class ModernButton(tk.Canvas):
                         fill=self.text_color, font=self.font)
     
     def _on_enter(self, event):
-        self._draw_button(self.itemcget(3, 'text'), self.hover_color)
+        self._draw_button(self.btn_text, self.hover_color)
     
     def _on_leave(self, event):
-        self._draw_button(self.itemcget(3, 'text'), self.bg_color)
+        self._draw_button(self.btn_text, self.bg_color)
     
     def _on_click(self, event):
         if self.command:
