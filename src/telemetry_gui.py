@@ -169,8 +169,19 @@ class TelemetryViewer:
                        foreground=COLORS['text'], insertcolor=COLORS['text'])
         
         # Combobox styles
-        style.configure('TCombobox', fieldbackground=COLORS['bg_light'],
-                       foreground=COLORS['text'], selectbackground=COLORS['accent'])
+        style.configure('TCombobox', 
+                       fieldbackground=COLORS['bg_light'],
+                       background=COLORS['bg_lighter'],
+                       foreground=COLORS['text'],
+                       arrowcolor=COLORS['accent'],
+                       selectbackground=COLORS['accent'],
+                       selectforeground=COLORS['text'],
+                       insertcolor=COLORS['text'])
+        style.map('TCombobox',
+                 fieldbackground=[('readonly', COLORS['bg_light'])],
+                 selectbackground=[('readonly', COLORS['accent'])],
+                 selectforeground=[('readonly', COLORS['text'])],
+                 foreground=[('readonly', COLORS['text'])])
         
         # Spinbox styles
         style.configure('TSpinbox', fieldbackground=COLORS['bg_light'],
