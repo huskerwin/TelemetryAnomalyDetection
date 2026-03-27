@@ -527,7 +527,19 @@ class TelemetryViewer:
                 # Try loading CSV files
                 csv_files = list(self.data_dir.glob("*.csv"))
                 if csv_files:
-                    self.load_csv_data(csv_files[0])
+                    # Prefer segments.csv over dataset.csv for OPS-SAT
+                    preferred_order = ['segments.csv', 'data.csv', 'telemetry.csv']
+                    selected_csv = csv_files[0]  # Default to first file
+                    
+                    for preferred in preferred_order:
+                        for csv_file in csv_files:
+                            if csv_file.name.lower() == preferred.lower():
+                                selected_csv = csv_file
+                                break
+                        if selected_csv.name.lower() == preferred.lower():
+                            break
+                    
+                    self.load_csv_data(selected_csv)
                 else:
                     messagebox.showerror("Error",
                         "No valid data found.\n\nExpected:\n"
