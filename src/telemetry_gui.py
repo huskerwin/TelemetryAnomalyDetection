@@ -121,6 +121,11 @@ class TelemetryViewer:
         self.root.update()
         
         try:
+            # Check if user selected train/ or test/ directory - use parent instead
+            if self.data_dir.name in ['train', 'test']:
+                self.data_dir = self.data_dir.parent
+                self.dir_var.set(str(self.data_dir))
+            
             # Check for train/test subdirectories (NASA SMAP & MSL format)
             train_dir = self.data_dir / "train"
             test_dir = self.data_dir / "test"
@@ -155,13 +160,37 @@ class TelemetryViewer:
                 self.status_var.set(f"Data loaded: {len(channels)} channels")
                 self.on_channel_select()
             
+            # Check if directory contains .npy files directly
+            elif list(self.data_dir.glob("*.npy")):
+                self.train_data = {}
+                self.test_data = {}
+                
+                for npy_file in self.data_dir.glob("*.npy"):
+                    channel_id = npy_file.stem
+                    data = np.load(npy_file)
+                    # Split 80/20 for train/test
+                    split_idx = int(0.8 * len(data))
+                    self.train_data[channel_id] = data[:split_idx]
+                    self.test_data[channel_id] = data[split_idx:]
+                
+                # Update channel combo
+                channels = sorted(self.train_data.keys())
+                self.channel_combo['values'] = channels
+                self.all_channels = channels
+                if channels:
+                    self.channel_combo.current(0)
+                
+                self.info_var.set(f"Loaded {len(channels)} channels from {self.data_dir.name}")
+                self.status_var.set(f"Data loaded: {len(channels)} channels")
+                self.on_channel_select()
+            
             else:
                 # Try loading CSV files
                 csv_files = list(self.data_dir.glob("*.csv"))
                 if csv_files:
                     self.load_csv_data(csv_files[0])
                 else:
-                    messagebox.showerror("Error", "No valid data found. Expected train/ and test/ directories or CSV files.")
+                    messagebox.showerror("Error", "No valid data found. Expected:\n- train/ and test/ directories with .npy files\n- .npy files in selected directory\n- .csv files in selected directory")
         
         except Exception as e:
             messagebox.showerror("Error", f"Failed to load data: {str(e)}")
